@@ -6,7 +6,7 @@
  * resposta. Cada medida vai para o notebook pela USB, em texto:
  *
  *   CSI,<seq>,<ms>,<rssi>,<len>,<v0>,<v1>,...      (int8: imaginário, real por subportadora)
- *   STATUS,<ms>,<rssi>,<pacotes_por_s>,<descartados>
+ *   STATUS,<ms>,<rssi>,<pacotes_por_s>,<descartados_fila_cheia>,<ignorados_802.11b>
  *
  * A detecção da queda NÃO acontece aqui: roda na "ponte" do notebook (fall-detection/bridge),
  * que também pode mandar comandos de volta por esta mesma serial:
@@ -52,6 +52,7 @@ static volatile bool haveBssid = false;
 static volatile uint32_t seqNo = 0;
 static volatile uint32_t rxCount = 0;
 static volatile uint32_t dropped = 0;
+static volatile uint32_t skipped11b = 0;
 
 static uint32_t lastProbe = 0;
 static uint32_t lastStatus = 0;
@@ -64,18 +65,25 @@ static void csiCallback(void *ctx, wifi_csi_info_t *info) {
   if (!info || !info->buf || info->len <= 0) return;
   // Só interessa o CSI dos quadros vindos do nosso transmissor.
   if (haveBssid && memcmp(info->mac, apBssid, 6) != 0) return;
+  // Quadros 802.11b (DSSS/CCK: sig_mode 0 e rate 0-3, ex.: beacons a 1 Mbps) não têm
+  // preâmbulo OFDM, então não trazem CSI útil.
+  if (info->rx_ctrl.sig_mode == 0 && info->rx_ctrl.rate < 4) {
+    skipped11b = skipped11b + 1;
+    return;
+  }
 
   CsiSample s;
-  s.seq = seqNo++;
+  s.seq = seqNo;
+  seqNo = seqNo + 1;
   s.ms = millis();
   s.rssi = info->rx_ctrl.rssi;
   s.len = info->len > CSI_BYTES ? CSI_BYTES : info->len;
   memcpy(s.data, info->buf, s.len);
 
   if (xQueueSend(csiQueue, &s, 0) == pdTRUE) {
-    rxCount++;
+    rxCount = rxCount + 1;
   } else {
-    dropped++;
+    dropped = dropped + 1;
   }
 }
 
@@ -216,7 +224,8 @@ void loop() {
   if (now - lastStatus >= 1000) {
     lastStatus = now;
     uint32_t total = rxCount;
-    Serial.printf("STATUS,%lu,%d,%lu,%lu\n", (unsigned long)now, WiFi.RSSI(), (unsigned long)(total - lastRxCount), (unsigned long)dropped);
+    Serial.printf("STATUS,%lu,%d,%lu,%lu,%lu\n", (unsigned long)now, WiFi.RSSI(), (unsigned long)(total - lastRxCount), (unsigned long)dropped,
+                  (unsigned long)skipped11b);
     lastRxCount = total;
   }
 

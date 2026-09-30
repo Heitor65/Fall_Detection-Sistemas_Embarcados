@@ -92,7 +92,7 @@ fall-detection/
 
 - **2× ESP32 clássico** (DevKit) + 2 cabos USB de dados. Um deles fica ligado ao notebook; o outro pode ir em power bank/carregador.
 - **Notebook** com Node.js ≥ 18 e Git.
-- Arduino IDE 2.x com o pacote de placas **"esp32 by Espressif Systems"** (core 2.0.x ou 3.x).
+- Arduino IDE 2.x com o pacote de placas **"esp32 by Espressif Systems"** — compilação verificada nos cores **2.0.17** e **3.3.12** (não testado em hardware).
 - O repositório **[senior-care](https://github.com/patrickgougeon/senior-care)** rodando no mesmo notebook.
 - Driver USB-serial da placa (CP210x ou CH340), se o Windows não reconhecer a porta.
 

@@ -38,6 +38,9 @@ export const DEFAULTS = {
   minWindowSamples: 8,
 };
 
+const MIN_RELATIVE_AMPLITUDE = 0.25; // fração da amplitude média do pacote
+const MIN_USABLE_SUBCARRIERS = 10;
+
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 
 function median(values) {
@@ -147,13 +150,19 @@ export class FallDetector {
 
     const m = this.win.length;
     if (m < this.cfg.minWindowSamples) return;
+    // Subportadoras nulas/muito fracas (guarda, DC, ou máscara errada) têm amplitude ~0 e
+    // ruído puro: dividir por elas explode a métrica. Só entram as que têm sinal de verdade.
     let total = 0;
+    let used = 0;
     for (let k = 0; k < n; k++) {
       const mu = this.sum[k] / m;
+      if (mu < MIN_RELATIVE_AMPLITUDE) continue;
       const variance = Math.max(0, this.sumSq[k] / m - mu * mu);
-      total += Math.sqrt(variance) / (mu || 1);
+      total += Math.sqrt(variance) / mu;
+      used++;
     }
-    this.activity = total / n;
+    if (used < MIN_USABLE_SUBCARRIERS) return; // pacote/janela sem informação útil
+    this.activity = total / used;
     this.smoothed =
       this.smoothed === null ? this.activity : this.smoothed + this.cfg.smoothAlpha * (this.activity - this.smoothed);
   }
