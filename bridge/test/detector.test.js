@@ -69,6 +69,20 @@ test("buraco longo de pacotes não gera alerta falso", () => {
   assert.ok(!events.some((e) => e.kind === "fall"));
 });
 
+test("subportadoras nulas (máscara errada) não quebram o detector", () => {
+  const det = new FallDetector();
+  const events = [];
+  let n = 0;
+  for (const s of generateSamples(SCENARIOS.fall, { seed: 4 })) {
+    // 10 subportadoras "nulas": amplitude ~0 com ruído de quantização int8
+    const amps = new Float64Array(s.amps.length + 10);
+    amps.set(s.amps);
+    for (let i = s.amps.length; i < amps.length; i++) amps[i] = (n++ % 3) * 0.7;
+    events.push(...det.push({ ...s, amps }).events);
+  }
+  assert.equal(events.filter((e) => e.kind === "fall").length, 1, JSON.stringify(kinds(events)));
+});
+
 test("parser: linha CSI válida vira 52 amplitudes", () => {
   const values = Array.from({ length: 128 }, (_, i) => (i % 2 ? 10 : -10));
   const parsed = parseCsiLine(`CSI,7,1234,-48,128,${values.join(",")}`);

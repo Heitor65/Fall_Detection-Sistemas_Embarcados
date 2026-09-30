@@ -2,9 +2,10 @@
 
 Roteiro para montar, ajustar e apresentar o protótipo com **2 ESP32 + 1 notebook**.
 
-> **Antes de tudo (véspera):** o firmware foi escrito seguindo a API oficial do ESP-IDF/Arduino-ESP32,
-> mas **ainda não foi compilado nem testado em hardware** (o código do notebook e a integração com o
-> site foram testados com CSI simulado). Reserve tempo para gravar os ESP32 e ajustar os limiares no local.
+> **Antes de tudo (véspera):** os dois sketches **compilam sem erros nem avisos** com `arduino-cli` no core
+> esp32 **2.0.17** e **3.3.12** (placa `esp32:esp32:esp32`), mas **ainda não foram testados em hardware**.
+> O código do notebook e a integração com o site foram testados com CSI simulado. Reserve tempo para
+> gravar os ESP32 e ajustar os limiares no local.
 
 ## 0. Checklist do dia
 
@@ -93,7 +94,8 @@ Botão **"Testar alerta (queda simulada)"** no card do dispositivo gera uma qued
 | Receptor não conecta (`[RX] sem resposta`) | TX desligado, SSID/senha/canal diferentes entre os sketches, ou TX muito longe. |
 | Ponte: "Serial conectada, mas nenhum pacote CSI" | RX conectou mas não recebe ecos: TX precisa mostrar `receptores conectados: 1`. Reinicie o RX. |
 | `pacotes/s` baixo ou zero | Canal congestionado (troque `AP_CHANNEL`), distância excessiva, cabo USB ruim. |
-| Erro de compilação no `csi_receiver` | Confirme a placa **ESP32 Dev Module** (não S3/C3) e o pacote esp32 ≥ 2.0.14. Se `wifi_csi_config_t` reclamar de campo inexistente, anote o erro — o core mudou a struct. |
+| Erro de compilação no `csi_receiver` | Confirme a placa **ESP32 Dev Module** (não S3/C3/C6 — o sketch avisa com `#error`) e o pacote esp32 2.0.17 ou 3.3.x (as versões testadas). |
+| `pacotes/s` = 0 mas o receptor conectou | O TX precisa mostrar `receptores conectados: 1` e `ecos/s ≈ 50`. No `STATUS` do receptor, o 5º campo (ignorados 802.11b) crescendo com o 3º campo em 0 indica que o transmissor está respondendo a 1 Mbps (sem CSI): reinicie os dois ESP32 e aproxime-os. |
 | `401 Não autorizado` na ponte | `SENIORCARE_API_KEY` errada/antiga. Rode `npm run db:seed` de novo (gera nova chave) e atualize `bridge/.env`. |
 | `sem conexão com o site` | `npm run dev` não está rodando, ou porta diferente em `SENIORCARE_URL`. A ponte guarda o alerta e reenvia sozinha. |
 | Dashboard mostra "Offline" | Ponte parada, ou sem pacotes CSI (>15 s sem heartbeat). |
