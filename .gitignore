@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.log
+# gravações de CSI (podem ficar grandes); force com `git add -f` se quiser versionar um dataset
+bridge/recordings/*.csv
+.DS_Store
