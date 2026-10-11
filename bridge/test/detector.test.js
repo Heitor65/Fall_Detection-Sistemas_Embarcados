@@ -97,5 +97,12 @@ test("parser: linhas truncadas/lixo são ignoradas", () => {
   assert.equal(parseCsiLine("CSI,7,1234,-48,128,1,2,3"), null);
   assert.equal(parseCsiLine("ets Jun  8 2016 00:22:57"), null);
   assert.equal(parseCsiLine("CSI,a,b,c,d,e,f"), null);
-  assert.deepEqual(parseStatusLine("STATUS,5000,-50,49"), { ts: 5, rssi: -50, pps: 49 });
+  assert.deepEqual(parseStatusLine("STATUS,5000,-50,49"), { ts: 5, rssi: -50, rxCount: 49 });
+  assert.deepEqual(parseStatusLine("STATUS,5000,-50,245,2,3"), {
+    ts: 5,
+    rssi: -50,
+    rxCount: 245,
+    dropped: 2,
+    skipped11b: 3,
+  });
 });

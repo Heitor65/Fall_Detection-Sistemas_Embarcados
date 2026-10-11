@@ -153,7 +153,7 @@ let lastStatus = detector.status(null);
 let lastState = null;
 let serialConnected = false;
 let lastNoCsiHint = 0;
-let lastEspPps = null;
+let lastEspRxCount = null;
 
 const stamp = () => new Date().toLocaleTimeString("pt-BR");
 const log = (msg) => console.log(`${stamp()}  ${msg}`);
@@ -250,7 +250,7 @@ const tick = setInterval(() => {
     const ratio = s.ratio ? `${s.ratio.toFixed(1)}×` : "-";
     log(
       `[${s.state.padEnd(11)}] pacotes/s=${String(pps).padStart(3)}  atividade=${s.activity.toFixed(4)}  ruído-base=${base}  (${ratio})  rssi=${s.rssi ?? "-"}` +
-        (lastEspPps !== null ? `  esp32-pps=${lastEspPps}` : "")
+        (lastEspRxCount !== null ? `  esp32-rx=${lastEspRxCount}` : "")
     );
   }
 
@@ -356,7 +356,7 @@ async function runSerial() {
       }
       const status = parseStatusLine(line);
       if (status) {
-        lastEspPps = status.pps;
+        lastEspRxCount = status.rxCount;
         return;
       }
       if (line.trim()) log(`[esp32] ${line.trim()}`);

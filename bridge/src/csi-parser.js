@@ -42,9 +42,18 @@ export function parseCsiLine(line) {
 }
 
 export function parseStatusLine(line) {
-  // STATUS,<ms>,<rssi>,<packets_per_second>
+  // STATUS,<ms>,<rssi>,<rxCount_total>,<dropped_total>,<skipped_11b_total>
   if (!line.startsWith("STATUS,")) return null;
   const f = line.trim().split(",");
-  const [ms, rssi, pps] = [Number(f[1]), Number(f[2]), Number(f[3])];
-  return [ms, rssi, pps].every(Number.isFinite) ? { ts: ms / 1000, rssi, pps } : null;
+  const [ms, rssi, rxCount] = [Number(f[1]), Number(f[2]), Number(f[3])];
+  if (![ms, rssi, rxCount].every(Number.isFinite)) return null;
+
+  const status = { ts: ms / 1000, rssi, rxCount };
+  if (f.length >= 6) {
+    const [dropped, skipped11b] = [Number(f[4]), Number(f[5])];
+    if (![dropped, skipped11b].every(Number.isFinite)) return null;
+    status.dropped = dropped;
+    status.skipped11b = skipped11b;
+  }
+  return status;
 }

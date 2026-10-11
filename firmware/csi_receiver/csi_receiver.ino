@@ -2,11 +2,11 @@
  * ESP32 #2 — RECEPTOR (cliente Wi-Fi + captura de CSI)
  *
  * Conecta na rede "ESP_Radar" criada pelo transmissor (ESP32 #1), envia um pacote UDP
- * de "sonda" ~50x por segundo e mede o CSI (Channel State Information) dos quadros de
+ * de "sonda" ~100x por segundo e mede o CSI (Channel State Information) dos quadros de
  * resposta. Cada medida vai para o notebook pela USB, em texto:
  *
  *   CSI,<seq>,<ms>,<rssi>,<len>,<v0>,<v1>,...      (int8: imaginário, real por subportadora)
- *   STATUS,<ms>,<rssi>,<pacotes_por_s>,<descartados_fila_cheia>,<ignorados_802.11b>
+ *   STATUS,<ms>,<rssi>,<rxCount_total>,<dropped_total>,<ignorados_802.11b_total>
  *
  * A detecção da queda NÃO acontece aqui: roda na "ponte" do notebook (fall-detection/bridge),
  * que também pode mandar comandos de volta por esta mesma serial:
@@ -30,7 +30,7 @@ static const uint8_t AP_CHANNEL = 6;
 static const uint16_t UDP_PORT = 5005;
 
 static const uint32_t SERIAL_BAUD = 921600;
-static const uint32_t PROBE_INTERVAL_MS = 20;  // 50 sondas/s (=> ~50 amostras CSI/s)
+static const uint32_t PROBE_INTERVAL_MS = 10; // 100 sondas/s (=> até ~100 amostras CSI/s)
 static const uint8_t LED_PIN = 2;              // LED da placa
 static const uint8_t EXT_LED_PIN = 19;         // LED externo (como no protótipo RSSI)
 static const uint32_t ALERT_MS = 8000;
@@ -56,7 +56,6 @@ static volatile uint32_t skipped11b = 0;
 
 static uint32_t lastProbe = 0;
 static uint32_t lastStatus = 0;
-static uint32_t lastRxCount = 0;
 static uint32_t alertUntil = 0;
 static uint32_t probeSeq = 0;
 
@@ -224,9 +223,8 @@ void loop() {
   if (now - lastStatus >= 1000) {
     lastStatus = now;
     uint32_t total = rxCount;
-    Serial.printf("STATUS,%lu,%d,%lu,%lu,%lu\n", (unsigned long)now, WiFi.RSSI(), (unsigned long)(total - lastRxCount), (unsigned long)dropped,
+    Serial.printf("STATUS,%lu,%d,%lu,%lu,%lu\n", (unsigned long)now, WiFi.RSSI(), (unsigned long)total, (unsigned long)dropped,
                   (unsigned long)skipped11b);
-    lastRxCount = total;
   }
 
   delay(1);

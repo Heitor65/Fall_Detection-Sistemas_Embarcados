@@ -22,11 +22,11 @@ Projeto acadêmico usado em duas disciplinas:
 ```mermaid
 flowchart LR
     TX["ESP32 #1<br/>Transmissor<br/>(AP 'ESP_Radar' + eco UDP)"]
-    RX["ESP32 #2<br/>Receptor<br/>(mede CSI, ~50 amostras/s)"]
+    RX["ESP32 #2<br/>Receptor<br/>(mede CSI, ~100 amostras/s)"]
     BR["Notebook<br/>Ponte Node.js<br/>(filtra, calcula atividade,<br/>máquina de estados)"]
     SC["SeniorCare<br/>Next.js + SQLite<br/>(dashboard em tempo real)"]
 
-    RX -- "sonda UDP 50 Hz" --> TX
+    RX -- "sonda UDP 100 Hz" --> TX
     TX -- "eco (quadro Wi-Fi com CSI)" --> RX
     RX -- "USB serial<br/>linhas CSI" --> BR
     BR -- "HTTP POST<br/>/api/ingest/events" --> SC
@@ -39,7 +39,7 @@ Correspondência com o fluxo do documento PIT (§4) e com as seções do artigo:
 | Etapa PIT | O que faz neste protótipo | Onde está |
 |---|---|---|
 | 1. Sensoriamento | Par de ESP32: o receptor envia sondas e o transmissor responde; o corpo entre eles perturba o canal | `firmware/` |
-| 2. Coleta CSI | Amplitude/fase por subportadora (LLTF, 64 subportadoras), ~50 amostras/s | `firmware/csi_receiver` |
+| 2. Coleta CSI | Amplitude/fase por subportadora (LLTF, 64 subportadoras), ~100 amostras/s | `firmware/csi_receiver` |
 | 3. Transporte | **USB serial** ESP32 → notebook (ver nota abaixo sobre MQTT) | `firmware/csi_receiver`, `bridge/src/serial-source.js` |
 | 4. Inferência | Filtragem, índice de atividade, calibração, máquina de estados impacto → imobilidade | `bridge/src/detector.js` |
 | 5. Alerta | HTTP para o SeniorCare: banner vermelho, alarme sonoro, (opcional) Telegram | `bridge/src/seniorcare-client.js` + repositório `senior-care` |
@@ -169,7 +169,7 @@ node src/index.js --replay recordings/queda_01.csv --impact-ratio 5
 - **Latência ponta a ponta** (seção IV-C do artigo): ao confirmar a queda, a ponte imprime
   `alerta entregue ao SeniorCare em N ms` (tempo do POST até a resposta). A latência total percebida =
   tempo de confirmação (≥ `--still-sec`, 3 s por padrão — é uma escolha de projeto para evitar falso positivo) + esse envio.
-- **Taxa de amostragem**: `--verbose` mostra pacotes/s recebidos (nominal ≈ 50).
+- **Taxa de amostragem**: `--verbose` mostra pacotes/s recebidos (nominal ≈ 100).
 - Registre por ensaio: posição dos módulos, distância, pessoa, tipo de movimento, e se houve alerta —
   isso dá a matriz de resultados (acertos, falsos positivos, quedas lentas perdidas) do artigo/PIT.
 

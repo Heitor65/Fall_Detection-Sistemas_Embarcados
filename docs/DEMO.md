@@ -50,10 +50,10 @@ npm start -- --verbose
 Uma linha por segundo:
 
 ```
-[monitoring ] pacotes/s= 49  atividade=0.0210  ruído-base=0.0193  (1.1×)  rssi=-47
+[monitoring ] pacotes/s= 99 atividade=0.0210 ruído-base=0.0193 (1.1×) rssi=-47
 ```
 
-- **`pacotes/s`** deve ficar perto de 50. Muito menor (< 20) ⇒ problema de Wi-Fi/canal/cabo (veja Troubleshooting).
+- **`pacotes/s`** deve ficar perto de 100. Muito menor (< 40) ⇒ problema de Wi-Fi/canal/cabo (veja Troubleshooting).
 - **Parado**: a razão `(x×)` deve ficar em ~1×. Se oscilar acima de 2×, o ambiente está ruidoso (alguém se mexendo, ventilador, interferência).
 - **Caminhando entre os módulos**: anote a razão típica (ex.: 3–5×).
 - **Cair sobre o colchão**: anote o pico (a ponte imprime `Possível impacto (pico N×)`).
@@ -95,7 +95,7 @@ Botão **"Testar alerta (queda simulada)"** no card do dispositivo gera uma qued
 | Ponte: "Serial conectada, mas nenhum pacote CSI" | RX conectou mas não recebe ecos: TX precisa mostrar `receptores conectados: 1`. Reinicie o RX. |
 | `pacotes/s` baixo ou zero | Canal congestionado (troque `AP_CHANNEL`), distância excessiva, cabo USB ruim. |
 | Erro de compilação no `csi_receiver` | Confirme a placa **ESP32 Dev Module** (não S3/C3/C6 — o sketch avisa com `#error`) e o pacote esp32 2.0.17 ou 3.3.x (as versões testadas). |
-| `pacotes/s` = 0 mas o receptor conectou | O TX precisa mostrar `receptores conectados: 1` e `ecos/s ≈ 50`. No `STATUS` do receptor, o 5º campo (ignorados 802.11b) crescendo com o 3º campo em 0 indica que o transmissor está respondendo a 1 Mbps (sem CSI): reinicie os dois ESP32 e aproxime-os. |
+| `pacotes/s` = 0 mas o receptor conectou | O TX precisa mostrar `receptores conectados: 1` e `ecos/s ≈ 100`. No `STATUS` do receptor, o 5º campo (ignorados 802.11b) crescendo com o 3º campo em 0 indica que o transmissor está respondendo a 1 Mbps (sem CSI): reinicie os dois ESP32 e aproxime-os. O 3º campo (`rxCount_total`) e o 4º (`dropped_total`) mostram os totais desde o boot. |
 | `401 Não autorizado` na ponte | `SENIORCARE_API_KEY` errada/antiga. Rode `npm run db:seed` de novo (gera nova chave) e atualize `bridge/.env`. |
 | `sem conexão com o site` | `npm run dev` não está rodando, ou porta diferente em `SENIORCARE_URL`. A ponte guarda o alerta e reenvia sozinha. |
 | Dashboard mostra "Offline" | Ponte parada, ou sem pacotes CSI (>15 s sem heartbeat). |
