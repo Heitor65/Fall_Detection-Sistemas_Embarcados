@@ -49,7 +49,9 @@ export class SerialSource {
       const { SerialPort } = await loadSerialport();
       const { ReadlineParser } = await import("@serialport/parser-readline");
       const path = await resolvePort(this.path);
-      const port = new SerialPort({ path, baudRate: this.baud, autoOpen: false });
+      // hupcl:false => não levanta DTR/RTS ao abrir; senão o auto-reset da placa reinicia o ESP32
+      // toda vez que a ponte abre a porta (e ele leva dezenas de segundos para reconectar no Wi-Fi).
+      const port = new SerialPort({ path, baudRate: this.baud, autoOpen: false, hupcl: false });
       await new Promise((resolve, reject) => port.open((err) => (err ? reject(err) : resolve())));
       this.port = port;
       this.log.log(`[serial] conectado em ${path} @ ${this.baud} baud`);

@@ -29,8 +29,14 @@ SeniorCare:
   --dry-run               Não envia nada ao site (só imprime)
   --upload                Com --replay: envia eventos ao site (por padrão replay é dry-run)
 
+Modo demonstração:
+  --demo                  Detecção MAIS FÁCIL e RÁPIDA (movimento leve já conta, impacto menor,
+                          confirma a queda após ~1,5 s parado). Para apresentar; aceita mais falsos
+                          positivos (sentar rápido também pode alertar). Os ajustes abaixo sobrescrevem.
+
 Ajuste do detector (ver bridge/src/detector.js):
   --calibration <s>  --motion-ratio <x>  --impact-ratio <x>  --still-sec <s>  --cooldown-sec <s>
+  --settle-sec <s>   --resume-sec <s>
 
 Outros:
   --record <arquivo>      Grava as linhas CSI cruas (para o artigo / ajuste de limiares)
@@ -78,6 +84,9 @@ const { values: args } = parseArgs({
     "impact-ratio": { type: "string" },
     "still-sec": { type: "string" },
     "cooldown-sec": { type: "string" },
+    "settle-sec": { type: "string" },
+    "resume-sec": { type: "string" },
+    demo: { type: "boolean" },
     record: { type: "string" },
     label: { type: "string" },
     speed: { type: "string" },
@@ -106,15 +115,30 @@ const num = (v, name) => {
   return n;
 };
 
-const detectorOptions = Object.fromEntries(
+// Preset de demonstração: reage a movimentos mais leves e confirma a queda mais cedo.
+const DEMO_PRESET = {
+  calibrationSec: 5,
+  motionRatio: 1.8,
+  impactRatio: 5,
+  settleSec: 0.3,
+  stillSec: 1.5,
+  resumeSec: 1.5,
+  cooldownSec: 8,
+};
+
+// Flags explícitos sobrescrevem o preset (e o preset sobrescreve os padrões do detector).
+const explicitOptions = Object.fromEntries(
   Object.entries({
     calibrationSec: num(args.calibration, "--calibration"),
+    settleSec: num(args["settle-sec"], "--settle-sec"),
+    resumeSec: num(args["resume-sec"], "--resume-sec"),
     motionRatio: num(args["motion-ratio"], "--motion-ratio"),
     impactRatio: num(args["impact-ratio"], "--impact-ratio"),
     stillSec: num(args["still-sec"], "--still-sec"),
     cooldownSec: num(args["cooldown-sec"], "--cooldown-sec"),
   }).filter(([, v]) => v !== undefined)
 );
+const detectorOptions = { ...(args.demo ? DEMO_PRESET : {}), ...explicitOptions };
 
 const mode = args.replay ? "replay" : args.simulate !== undefined ? "simulate" : "serial";
 const scenarioName = args.simulate ?? "demo";
@@ -250,7 +274,7 @@ const tick = setInterval(() => {
     const ratio = s.ratio ? `${s.ratio.toFixed(1)}×` : "-";
     log(
       `[${s.state.padEnd(11)}] pacotes/s=${String(pps).padStart(3)}  atividade=${s.activity.toFixed(4)}  ruído-base=${base}  (${ratio})  rssi=${s.rssi ?? "-"}` +
-        (lastEspPps !== null ? `  esp32-pps=${lastEspPps}` : "")
+        ""
     );
   }
 
@@ -386,7 +410,7 @@ process.on("SIGINT", () => {
 
 log(
   `Modo: ${mode}${dryRun ? " (dry-run)" : ` → ${apiUrl}`} | limiares: movimento ×${cfg.motionRatio}, impacto ×${cfg.impactRatio}, imóvel ${cfg.stillSec} s` +
-    (Object.keys(detectorOptions).length ? "  [ajustados por linha de comando]" : "")
+    (args.demo ? "  [MODO DEMO: sensível]" : Object.keys(detectorOptions).length ? "  [ajustados por linha de comando]" : "")
 );
 
 try {

@@ -99,6 +99,8 @@ export class FallDetector {
     // Buraco/recuo no tempo (perda de pacotes, ESP reiniciado): a janela deixou de ser contínua.
     if (this.lastT !== null && (t - this.lastT > c.maxGapSec || t < this.lastT)) {
       this.clearWindow();
+      // Calibração interrompida (buraco ou ESP32 reiniciado): amostras antigas não valem, recomeça.
+      if (this.state === "calibrating") this.startCalibration(null);
       if (this.state === "evaluating" || this.state === "motion") {
         this.state = "monitoring";
         this.moveStart = this.quietSince = this.evalStart = null;
